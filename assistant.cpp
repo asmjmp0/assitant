@@ -11,6 +11,7 @@ bool sideshowed=false;
 bool sidefixed=false;
 bool sideenable;
 bool anime=true;
+bool opflag=false;
 int savetime;
 int sideOpacity;
 QString name;
@@ -47,13 +48,13 @@ assistant::assistant(QWidget *parent)
         m_IniFile->setValue("sidewidget/fontcolor","yellow");
         m_IniFile->setValue("sidewidget/anime",1);
     }
+
    self=m_IniFile->value("self/self").toBool();
    savetime=m_IniFile->value("sidewidget/savatime").toInt();
    sideenable=m_IniFile->value("sidewidget/enable").toBool();
    sideOpacity=m_IniFile->value("sidewidget/Opacity").toInt();
    sidefontcolor=m_IniFile->value("sidewidget/fontcolor").toString();
    anime=m_IniFile->value("sidewidget/anime").toBool();
-   qDebug()<<savetime;
 
     this->resize(100,100);
     this->setWindowFlags(Qt::FramelessWindowHint);
@@ -221,7 +222,7 @@ void assistant::createMenu()
 }
 void assistant::exitAction()
 {
-    m_IniFile->setValue("text/text",textstr+"");
+    m_IniFile->setValue("text/"+side->clcbox->currentText(),side->tEdit->toPlainText());
     sysicon->hide();
     close();
     side->close();

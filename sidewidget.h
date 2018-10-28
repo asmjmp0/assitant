@@ -21,6 +21,7 @@
 #include<QAction>
 #include<QPoint>
 #include<QClipboard>
+#include<QLineEdit>
 class sidewidget : public QWidget
 {
     Q_OBJECT
@@ -28,12 +29,13 @@ public:
     explicit sidewidget(QWidget *parent = nullptr);
     QTimer *timer;
     QTextCharFormat fmt;
+    QComboBox *clcbox;
+    QPlainTextEdit   *tEdit;
 private:
     QPushButton *hideBtn;
     QPushButton *fixedBtn;
     QPushButton *pictureBtn;
     QPushButton *updatecomboxBtn;
-    QPlainTextEdit   *tEdit;
     QComboBox *combox;
     QLabel *pictureLabel1;
     QGridLayout *mainlayout;
@@ -48,8 +50,10 @@ private:
     QAction *selectallAction;
     QAction *pasteAction;
     QAction *URLAction;
+    QLineEdit *clledit;
     bool firstrun;
     void createMenuandAction();
+    int preindex;
 public slots:
     void updatepro();
     void hidepro();
@@ -67,6 +71,8 @@ private slots:
     void pastepro();
     void selectallypro();
     void URLpro();
+    void showcombox();
+    void showtextandadd(QString);
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
 };

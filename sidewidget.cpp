@@ -12,6 +12,7 @@ extern int savetime;
 QString textstr;
 extern QSettings *m_IniFile;
 extern int sideOpacity;
+extern bool opflag;
 sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
 {
     this->setStyleSheet("background-color:green");
@@ -26,8 +27,21 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
     updatecomboxBtn=new QPushButton(tr("更新目录"));
     tEdit=new QPlainTextEdit;
     combox=new QComboBox;
+    clcbox=new QComboBox;
+    clledit=new QLineEdit;
+    clledit->hide();
     pictureLabel1=new QLabel;
     mainlayout=new QGridLayout(this);
+
+    QStringList textlist;
+    m_IniFile->beginGroup("text");
+    textlist=m_IniFile->childKeys();
+    for(int i=0;i<textlist.count();i++)
+        clcbox->addItem(textlist.at(i));
+    m_IniFile->endGroup();
+    clcbox->addItem("添加新文本");
+    textstr=m_IniFile->value("text/"+textlist[0]).toString();
+    preindex=0;
 
     hideBtn->setStyleSheet("background-color:white");
     fixedBtn->setStyleSheet("background-color:white");
@@ -38,11 +52,13 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
 
     mainlayout->addWidget(fixedBtn,0,0);
     mainlayout->addWidget(hideBtn,0,1);
-    mainlayout->addWidget(tEdit,1,0,1,2);
-    mainlayout->addWidget(pictureBtn,2,0);
-    mainlayout->addWidget(updatecomboxBtn,2,1);
-    mainlayout->addWidget(combox,3,0,1,2);
-    mainlayout->addWidget(pictureLabel1,4,0,1,2);
+    mainlayout->addWidget(clcbox,1,0,1,2);
+    mainlayout->addWidget(clledit,1,0,1,2);
+    mainlayout->addWidget(tEdit,2,0,1,2);
+    mainlayout->addWidget(pictureBtn,3,0);
+    mainlayout->addWidget(updatecomboxBtn,3,1);
+    mainlayout->addWidget(combox,4,0,1,2);
+    mainlayout->addWidget(pictureLabel1,5,0,1,2);
     mainlayout->setSpacing(5);
 
     path=QCoreApplication::applicationDirPath();
@@ -65,7 +81,6 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
         }
     tEdit->setFixedSize(370,500);
     tEdit->setFont(QFont(tr("宋体"), 12,63));
-    textstr=m_IniFile->value("text/text").toString();
 
 
     cursor = tEdit->textCursor();
@@ -81,6 +96,7 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
     pictureLabel1->setPixmap(fitpixmap);
 
     pictureLabel1->installEventFilter(this);
+    clcbox->installEventFilter(this);
 
 
     SetWindowLong((HWND)winId(),GWL_EXSTYLE,WS_EX_TOOLWINDOW);
@@ -93,6 +109,68 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
     connect(timer,SIGNAL(timeout()),this,SLOT(timepro()));
     connect(combox,SIGNAL(activated(int)),this,SLOT(comboxpro(int)));
     connect(tEdit,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(showMenu(QPoint)));
+    connect(clledit,SIGNAL(returnPressed()),this,SLOT(showcombox()));
+    connect(clcbox,SIGNAL(activated(QString)),this,SLOT(showtextandadd(QString)));
+}
+void sidewidget::showtextandadd(QString str)
+{
+    int index=clcbox->currentIndex();
+    opflag=false;
+    m_IniFile->setValue("text/"+clcbox->itemText(preindex),tEdit->toPlainText());
+    preindex=index;
+    if(index!=clcbox->count()-1)
+    {
+        tEdit->setPlainText(m_IniFile->value("text/"+str).toString());
+    }
+    else//增添操作
+    {
+        opflag=true;
+        clledit->setText("请输入名称");
+        clcbox->hide();
+        clledit->show();
+        clledit->setFocus();
+    }
+
+}
+void sidewidget::showcombox()
+{
+    int index=clcbox->currentIndex();
+    if(index!=clcbox->count()-1)
+    {
+    if(clledit->text()!="")//改名操作
+    {
+    m_IniFile->setValue("text/"+clledit->text(),tEdit->toPlainText());//保存当前值
+    m_IniFile->remove("text/"+clcbox->currentText());//移除先前值
+    //更新列表框
+    clcbox->removeItem(index);
+    clcbox->insertItem(index,clledit->text());
+    clcbox->setCurrentIndex(index);
+    }
+    if(clledit->text()=="")//删除操作
+    {
+        tEdit->clear();
+        m_IniFile->remove("text/"+clcbox->currentText());//移除项
+        clcbox->removeItem(index);
+        tEdit->setPlainText(m_IniFile->value("text/"+clcbox->currentText()).toString());
+    }
+    }
+    else//增添操作
+    {
+        if(clledit->text()=="")//创建为空则不创建
+        {
+            clledit->hide();
+            clcbox->show();
+            opflag=false;
+            return;
+        }
+        m_IniFile->setValue("text/"+clledit->text(),"");//保存当前值
+        tEdit->clear();
+        clcbox->insertItem(index,clledit->text());
+        clcbox->setCurrentIndex(index);
+    }
+    clledit->hide();
+    clcbox->show();
+    opflag=false;
 }
 void sidewidget::hidepro()
 {
@@ -106,7 +184,7 @@ void sidewidget::hidepro()
     }
     i=0;
     }
-    m_IniFile->setValue("text/text",textstr);
+    m_IniFile->setValue("text/"+clcbox->currentText(),tEdit->toPlainText());
     this->hide();
     this->move(0,0);
     sideshowed=false;
@@ -228,7 +306,7 @@ bool sidewidget::eventFilter(QObject *obj, QEvent *event)
 {
     if(obj==pictureLabel1)
     {
-        if (event->type() == QEvent::MouseButtonPress)
+        if (event->type() == QEvent::MouseButtonPress)//为标签添加点击事件
         {
             QString str=m_IniFile->value("picture/current").toString();
             qDebug()<<str;
@@ -236,10 +314,23 @@ bool sidewidget::eventFilter(QObject *obj, QEvent *event)
             ShellExecute(NULL, L"open", L"explorer.exe",str.toStdWString().c_str(), NULL, SW_SHOWNORMAL);
         }
     }
+    if(obj==clcbox)
+    {
+
+        if(event->type()==QEvent::ContextMenu)//右键启动输入框
+        {
+            opflag=true;//正在操作
+            clledit->setText(clcbox->currentText());
+            clcbox->hide();
+            clledit->show();
+            clledit->setFocus();
+        }
+    }
 }
 void sidewidget::savepro()
 {
-    m_IniFile->setValue("text/text",textstr);
+    if(!opflag)
+    m_IniFile->setValue("text/"+clcbox->currentText(),tEdit->toPlainText());
 }
 void sidewidget::showMenu(QPoint p)
 {
