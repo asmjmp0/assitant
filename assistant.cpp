@@ -88,6 +88,7 @@ assistant::assistant(QWidget *parent)
     connect(op,SIGNAL(fontcolor(QString)),this,SLOT(tosetfontcolor(QString)));
     connect(cmdlineedit,SIGNAL(returnPressed()),this,SLOT(cmdpro()));
     connect(cmdlineedit,SIGNAL(cursorPositionChanged(int,int)),this,SLOT(inputpro()));
+    connect(sysicon,SIGNAL(activated(QSystemTrayIcon::ActivationReason)),this,SLOT(showpro(QSystemTrayIcon::ActivationReason)));
 
 
 
@@ -95,6 +96,17 @@ assistant::assistant(QWidget *parent)
     createMenu();
     selfrun();
     setfontcolor(sidefontcolor);
+}
+void assistant::showpro(QSystemTrayIcon::ActivationReason reason )
+{
+    if(reason==QSystemTrayIcon::DoubleClick)
+        if(sidefixed)
+        {
+           side->show();
+           SetWindowPos(HWND(side->winId()), HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);//运用管理员权限
+           SetWindowPos(HWND(side->winId()), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+        }
+
 }
 void assistant::inputpro()
 {
@@ -178,7 +190,8 @@ void assistant::tosetfontcolor(QString str)
 }
 void assistant::keystate()//时钟回调函数
 {
-    int vkey,i;
+    int vkey;
+    double i;
     static int c=0;
     vkey=GetAsyncKeyState(VK_MBUTTON);
     if(cursor().pos().x()==0 && sideshowed==false && sideenable)//显示侧边栏
@@ -191,9 +204,9 @@ void assistant::keystate()//时钟回调函数
             side->show();
             if(anime)
             {
-            for(i=-400;i<0;i+=1)//载入动画
+            for(i=-400;i<0;i+=0.0002)//载入动画
             {
-                side->move(i,0);
+                side->move((int)i,0);
             }
             i=-400;
             }

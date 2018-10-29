@@ -56,6 +56,7 @@ private slots:
     void tosetfontcolor(QString);
     void cmdpro();
     void inputpro();
+    void showpro(QSystemTrayIcon::ActivationReason);
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
 };

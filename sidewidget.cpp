@@ -65,6 +65,8 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
     mainlayout->addWidget(pictureLabel1,6,0,1,2);
     mainlayout->setSpacing(5);
 
+    pictureLabel1->setMinimumSize(390,500);
+
     path=QCoreApplication::applicationDirPath();
     path+="/AppDate/";
     dir.setPath(path);
@@ -190,12 +192,12 @@ void sidewidget::showcombox()
 }
 void sidewidget::hidepro()
 {
-    int i;
+    double i;
     if(anime)
     {
-    for(i=0;i>-400;i-=1)
+    for(i=0;i>-400;i-=0.0002)
     {
-        move(i,0);
+        move((int)i,0);
     }
     i=0;
     }
