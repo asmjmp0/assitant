@@ -3,7 +3,6 @@
 #include<QCoreApplication>
 #include<QApplication>
 #include<QDesktopServices>
-#include<QThread>
 extern bool sideshowed;
 extern QString name;
 extern bool sidefixed;
@@ -31,6 +30,7 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
     clledit=new QLineEdit;
     clledit->hide();
     pictureLabel1=new QLabel;
+    textcount=new QLabel("当前字数:");
     mainlayout=new QGridLayout(this);
 
     QStringList textlist;
@@ -47,6 +47,9 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
     fixedBtn->setStyleSheet("background-color:white");
     pictureBtn->setStyleSheet("background-color:white");
     updatecomboxBtn->setStyleSheet("background-color:white");
+    clcbox->setStyleSheet("background-color:white");
+    clledit->setStyleSheet("background-color:white");
+    textcount->setStyleSheet("color:white");
     tEdit->setStyleSheet("background-image:url(:/new/prefix1/syoujyo.png)");
     combox->setStyleSheet("background-color:yellow");
 
@@ -54,11 +57,12 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
     mainlayout->addWidget(hideBtn,0,1);
     mainlayout->addWidget(clcbox,1,0,1,2);
     mainlayout->addWidget(clledit,1,0,1,2);
-    mainlayout->addWidget(tEdit,2,0,1,2);
-    mainlayout->addWidget(pictureBtn,3,0);
-    mainlayout->addWidget(updatecomboxBtn,3,1);
-    mainlayout->addWidget(combox,4,0,1,2);
-    mainlayout->addWidget(pictureLabel1,5,0,1,2);
+    mainlayout->addWidget(textcount,2,0,1,2,Qt::AlignRight);
+    mainlayout->addWidget(tEdit,3,0,1,2);
+    mainlayout->addWidget(pictureBtn,4,0);
+    mainlayout->addWidget(updatecomboxBtn,4,1);
+    mainlayout->addWidget(combox,5,0,1,2);
+    mainlayout->addWidget(pictureLabel1,6,0,1,2);
     mainlayout->setSpacing(5);
 
     path=QCoreApplication::applicationDirPath();
@@ -80,7 +84,7 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
                combox->setCurrentIndex(m);
         }
     tEdit->setFixedSize(370,500);
-    tEdit->setFont(QFont(tr("宋体"), 12,63));
+    tEdit->setFont(QFont(tr("宋体"), 11,63));
 
 
     cursor = tEdit->textCursor();
@@ -148,10 +152,22 @@ void sidewidget::showcombox()
     }
     if(clledit->text()=="")//删除操作
     {
+        if(clcbox->currentIndex()==clcbox->count()-2)//为倒数第二个
+        {
+            tEdit->clear();
+            m_IniFile->remove("text/"+clcbox->currentText());//移除项
+            clcbox->removeItem(index);
+            clcbox->setCurrentIndex(clcbox->count()-2);
+            tEdit->setPlainText(m_IniFile->value("text/"+clcbox->currentText()).toString());
+
+        }
+        else
+        {
         tEdit->clear();
         m_IniFile->remove("text/"+clcbox->currentText());//移除项
         clcbox->removeItem(index);
         tEdit->setPlainText(m_IniFile->value("text/"+clcbox->currentText()).toString());
+        }
     }
     }
     else//增添操作
@@ -177,9 +193,8 @@ void sidewidget::hidepro()
     int i;
     if(anime)
     {
-    for(i=0;i>-400;i-=4)
+    for(i=0;i>-400;i-=1)
     {
-        QThread::msleep(1);
         move(i,0);
     }
     i=0;
@@ -213,6 +228,7 @@ void sidewidget::textchangepro()
     cursor.mergeCharFormat(fmt);
     tEdit->mergeCurrentCharFormat(fmt);
     textstr=tEdit->toPlainText();
+    textcount->setText("当前字数："+QString::number(tEdit->toPlainText().length(),10));
 }
 void sidewidget::timepro()
 {
@@ -285,7 +301,7 @@ void sidewidget::updatepro()
         }
     }
 
-    tEdit->setFont(QFont(tr("宋体"), 12,63));
+    tEdit->setFont(QFont(tr("宋体"), 11,63));
 
 
     cursor = tEdit->textCursor();

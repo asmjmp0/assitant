@@ -5,6 +5,7 @@
 #include<QPushButton>
 #include<QGridLayout>
 #include<QTimer>
+#include<QLineEdit>
 #include<windows.h>
 #include<QSystemTrayIcon>
 #include<QMenu>
@@ -15,6 +16,8 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include<QTextCodec>
+#include<QObject>
+#include<QEvent>
 class assistant : public QWidget
 {
     Q_OBJECT
@@ -30,6 +33,7 @@ private:
     QTimer *timer;
     QPushButton *lockBtn;
     QPushButton *screenBtn;
+    QLineEdit *cmdlineedit;
     QPushButton *browserBtn;
     QPushButton *optionBtn;
     QGridLayout *mainlayout;
@@ -50,6 +54,10 @@ private slots:
     void tosetOpacity(int);
     void toleaveslider();
     void tosetfontcolor(QString);
+    void cmdpro();
+    void inputpro();
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
 };
 
 #endif // ASSISTANT_H

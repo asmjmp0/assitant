@@ -2,7 +2,6 @@
 #include<QDebug>
 #include<QMessageBox>
 #include<QApplication>
-#include<QThread>
 int count=0;
 bool status=false;
 bool findit= false;
@@ -25,6 +24,7 @@ assistant::assistant(QWidget *parent)
     screenBtn->setStyleSheet("background-color: blue");
     lockBtn=new QPushButton(tr("多任务"));
     lockBtn->setStyleSheet("background-color: red");
+    cmdlineedit=new QLineEdit;
     browserBtn=new QPushButton(tr("浏览器"));
     browserBtn->setStyleSheet("background-color: green");
     optionBtn=new QPushButton(tr("介绍与选项"));
@@ -32,8 +32,9 @@ assistant::assistant(QWidget *parent)
     mainlayout=new QGridLayout(this);
     mainlayout->addWidget(screenBtn,0,0);
     mainlayout->addWidget(lockBtn,0,1);
-    mainlayout->addWidget(browserBtn,1,0);
-    mainlayout->addWidget(optionBtn,1,1);
+    mainlayout->addWidget(cmdlineedit,1,0,1,2);
+    mainlayout->addWidget(browserBtn,2,0);
+    mainlayout->addWidget(optionBtn,2,1);
     mainlayout->setSpacing(50);
 
     m_IniFile = new QSettings(QApplication::applicationDirPath()+"/option.ini", QSettings::IniFormat);
@@ -74,6 +75,9 @@ assistant::assistant(QWidget *parent)
     side->show();
     side->hide();
 
+    cmdlineedit->installEventFilter(this);
+    cmdlineedit->setFocus();
+
     connect(timer,SIGNAL(timeout()),this,SLOT(keystate()));
     connect(screenBtn,SIGNAL(clicked(bool)),this,SLOT(screen()));
     connect(lockBtn,SIGNAL(clicked(bool)),this,SLOT(locked()));
@@ -82,11 +86,32 @@ assistant::assistant(QWidget *parent)
     connect(op,SIGNAL(setOpacity(int)),this,SLOT(tosetOpacity(int)));
     connect(op,SIGNAL(itleaveslider()),this,SLOT(toleaveslider()));
     connect(op,SIGNAL(fontcolor(QString)),this,SLOT(tosetfontcolor(QString)));
+    connect(cmdlineedit,SIGNAL(returnPressed()),this,SLOT(cmdpro()));
+    connect(cmdlineedit,SIGNAL(cursorPositionChanged(int,int)),this,SLOT(inputpro()));
+
+
 
     createAciton();
     createMenu();
     selfrun();
     setfontcolor(sidefontcolor);
+}
+void assistant::inputpro()
+{
+    status=false;
+}
+void assistant::cmdpro()
+{
+    hide();
+    WinExec(cmdlineedit->text().toStdString().c_str(),SW_NORMAL);
+    cmdlineedit->clear();
+}
+bool assistant::eventFilter(QObject *obj, QEvent *event)
+{
+    if(obj==cmdlineedit)
+        if(event->type()==QEvent::MouseButtonPress)
+            status=false;
+    return false;
 }
 void assistant::screen()
 {
@@ -166,9 +191,8 @@ void assistant::keystate()//时钟回调函数
             side->show();
             if(anime)
             {
-            for(i=-400;i<0;i+=5)//载入动画
+            for(i=-400;i<0;i+=1)//载入动画
             {
-                QThread::msleep(1);
                 side->move(i,0);
             }
             i=-400;

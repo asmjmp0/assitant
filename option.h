@@ -5,7 +5,7 @@
 #include<QPushButton>
 #include<QGridLayout>
 #include<QLabel>
-#include<QCheckBox>;
+#include<QCheckBox>
 #include<QSettings>
 #include<QLabel>
 #include<QLineEdit>

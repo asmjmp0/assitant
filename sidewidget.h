@@ -36,6 +36,7 @@ private:
     QPushButton *fixedBtn;
     QPushButton *pictureBtn;
     QPushButton *updatecomboxBtn;
+    QLabel *textcount;
     QComboBox *combox;
     QLabel *pictureLabel1;
     QGridLayout *mainlayout;
