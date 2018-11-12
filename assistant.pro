@@ -27,12 +27,16 @@ SOURCES += \
         main.cpp \
         assistant.cpp \
     option.cpp \
-    sidewidget.cpp
+    sidewidget.cpp \
+    downloadwidget.cpp \
+    view.cpp
 
 HEADERS += \
         assistant.h \
     option.h \
-    sidewidget.h
+    sidewidget.h \
+    downloadwidget.h \
+    view.h
 
 RESOURCES += \
     src.qrc

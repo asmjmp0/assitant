@@ -2,6 +2,7 @@
 #include<QDebug>
 #include<QMessageBox>
 #include<QApplication>
+#include<QKeyEvent>
 int count=0;
 bool status=false;
 bool findit= false;
@@ -99,7 +100,7 @@ assistant::assistant(QWidget *parent)
 }
 void assistant::showpro(QSystemTrayIcon::ActivationReason reason )
 {
-    if(reason==QSystemTrayIcon::DoubleClick)
+    if(reason==QSystemTrayIcon::Trigger)
         if(sidefixed)
         {
            side->show();
@@ -123,10 +124,18 @@ bool assistant::eventFilter(QObject *obj, QEvent *event)
     if(obj==cmdlineedit)
         if(event->type()==QEvent::MouseButtonPress)
             status=false;
+        if(event->type()==QEvent::KeyPress)
+        {
+            QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+            if(keyEvent->key()==Qt::Key_Down)
+                    browser();
+        }
+
     return false;
 }
 void assistant::screen()
 {
+this->setFocus();
 hide();
 count=0;
 status=false;
@@ -143,16 +152,24 @@ hide();
 count=0;
 status=false;
 keybd_event(VK_LWIN,0,0,0);
-keybd_event(9,0,0,0);//TAB
+keybd_event(VK_TAB,0,0,0);
 keybd_event(VK_LWIN,0,2,0);
-keybd_event(9,0,2,0);
+keybd_event(VK_TAB,0,2,0);
 }
 void assistant::browser()
 {
     hide();
     count=0;
     status=false;
+    if(cmdlineedit->text()=="")
     QDesktopServices::openUrl(QUrl("www.baidu.com"));
+    else
+    {
+        QString temp="www.baidu.com";
+        temp=temp+"/s?wd="+cmdlineedit->text();
+        QDesktopServices::openUrl(QUrl(temp));
+        cmdlineedit->clear();
+    }
 }
 void assistant::optionpro()
 {
@@ -204,11 +221,11 @@ void assistant::keystate()//时钟回调函数
             side->show();
             if(anime)
             {
-            for(i=-400;i<0;i+=0.0002)//载入动画
+            for(i=-500;i<0;i+=0.0002)//载入动画
             {
                 side->move((int)i,0);
             }
-            i=-400;
+            i=-500;
             }
             side->move(0,0);
             sideshowed=true;

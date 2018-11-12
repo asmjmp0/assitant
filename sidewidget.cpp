@@ -3,6 +3,7 @@
 #include<QCoreApplication>
 #include<QApplication>
 #include<QDesktopServices>
+#include<QMessageBox>
 extern bool sideshowed;
 extern QString name;
 extern bool sidefixed;
@@ -16,7 +17,7 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
 {
     this->setStyleSheet("background-color:green");
     this->setWindowFlags(Qt::FramelessWindowHint);
-    this->setFixedSize(400,GetSystemMetrics(SM_CYFULLSCREEN)+30);
+    this->setFixedSize(500,GetSystemMetrics(SM_CYFULLSCREEN)+30);
     this->setWindowOpacity(0.9);
 
     timer=new QTimer(this);
@@ -24,6 +25,8 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
     fixedBtn =new QPushButton(tr("固定"));
     pictureBtn=new QPushButton(tr("加入图片"));
     updatecomboxBtn=new QPushButton(tr("更新目录"));
+    uploadBtn=new QPushButton(tr("上传"));
+    downloadBtn=new QPushButton(tr("下载"));
     tEdit=new QPlainTextEdit;
     combox=new QComboBox;
     clcbox=new QComboBox;
@@ -47,6 +50,8 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
     fixedBtn->setStyleSheet("background-color:white");
     pictureBtn->setStyleSheet("background-color:white");
     updatecomboxBtn->setStyleSheet("background-color:white");
+    uploadBtn->setStyleSheet("background-color:white");
+    downloadBtn->setStyleSheet("background-color:white");
     clcbox->setStyleSheet("background-color:white");
     clledit->setStyleSheet("background-color:white");
     textcount->setStyleSheet("color:white");
@@ -57,15 +62,17 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
     mainlayout->addWidget(hideBtn,0,1);
     mainlayout->addWidget(clcbox,1,0,1,2);
     mainlayout->addWidget(clledit,1,0,1,2);
+    mainlayout->addWidget(uploadBtn,2,0,1,2,Qt::AlignLeft);
+    mainlayout->addWidget(downloadBtn,2,0,1,2,Qt::AlignCenter);
     mainlayout->addWidget(textcount,2,0,1,2,Qt::AlignRight);
     mainlayout->addWidget(tEdit,3,0,1,2);
     mainlayout->addWidget(pictureBtn,4,0);
     mainlayout->addWidget(updatecomboxBtn,4,1);
     mainlayout->addWidget(combox,5,0,1,2);
-    mainlayout->addWidget(pictureLabel1,6,0,1,2);
+    mainlayout->addWidget(pictureLabel1,6,0,1,2,Qt::AlignCenter);
     mainlayout->setSpacing(5);
 
-    pictureLabel1->setMinimumSize(390,500);
+    pictureLabel1->setMinimumSize(490,450);
 
     path=QCoreApplication::applicationDirPath();
     path+="/AppDate/";
@@ -85,8 +92,9 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
             if(path+file_list.at(m).fileName()==m_IniFile->value("picture/current").toString())
                combox->setCurrentIndex(m);
         }
-    tEdit->setFixedSize(370,500);
-    tEdit->setFont(QFont(tr("宋体"), 11,63));
+    tEdit->setFixedSize(470,500);
+    tEdit->setFont(QFont(tr("宋体"), 11,50));
+    tEdit->setCursorWidth(2);
 
 
     cursor = tEdit->textCursor();
@@ -98,7 +106,7 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
     firstrun=true;
 
     QPixmap *img= new QPixmap(m_IniFile->value("picture/current").toString());
-    QPixmap fitpixmap =img->scaled(370, 490, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    QPixmap fitpixmap =img->scaled(470, 450, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     pictureLabel1->setPixmap(fitpixmap);
 
     pictureLabel1->installEventFilter(this);
@@ -106,23 +114,82 @@ sidewidget::sidewidget(QWidget *parent) : QWidget(parent)
 
 
     SetWindowLong((HWND)winId(),GWL_EXSTYLE,WS_EX_TOOLWINDOW);
+    prestrcount=tEdit->toPlainText().length();
 
     connect(fixedBtn,SIGNAL(clicked(bool)),this,SLOT(fixedpro()));
     connect(hideBtn,SIGNAL(clicked(bool)),this,SLOT(hidepro()));
     connect(pictureBtn,SIGNAL(clicked(bool)),this,SLOT(picturepro()));
     connect(updatecomboxBtn,SIGNAL(clicked(bool)),this,SLOT(updatepro()));
+    connect(tEdit,SIGNAL(cursorPositionChanged()),this,SLOT(cursorchangepro()));
     connect(tEdit,SIGNAL(textChanged()),this,SLOT(textchangepro()));
     connect(timer,SIGNAL(timeout()),this,SLOT(timepro()));
     connect(combox,SIGNAL(activated(int)),this,SLOT(comboxpro(int)));
     connect(tEdit,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(showMenu(QPoint)));
     connect(clledit,SIGNAL(returnPressed()),this,SLOT(showcombox()));
     connect(clcbox,SIGNAL(activated(QString)),this,SLOT(showtextandadd(QString)));
+    connect(uploadBtn,SIGNAL(clicked(bool)),this,SLOT(uploadpro()));
+    connect(downloadBtn,SIGNAL(clicked(bool)),this,SLOT(downloadpro()));
+}
+void sidewidget::textchangepro()
+{
+    cursor.mergeCharFormat(fmt);
+    tEdit->mergeCurrentCharFormat(fmt);
+    textstr=tEdit->toPlainText();
+    textcount->setText("当前字数："+QString::number(tEdit->toPlainText().length(),10));
+}
+void sidewidget::uploadpro()
+{
+    timer->stop();
+    QMessageBox mesbox(QMessageBox::NoIcon, "上传", "你想分享你的文档到服务器上吗", QMessageBox::Yes | QMessageBox::No, NULL);
+    QSettings *dataIni = new QSettings(QApplication::applicationDirPath()+"/data.ini", QSettings::IniFormat);
+    dataIni->beginGroup("text");
+    QStringList strlist=dataIni->childKeys();
+    dataIni->endGroup();
+    if(mesbox.exec()==QMessageBox::Yes)
+    {
+        if(strlist.contains(clcbox->currentText()))
+        {
+            QMessageBox::information(0,"上传失败","存在相同文本",0);
+            timer->start(100);
+        }
+        else
+        {
+        dataIni->setValue("text/"+clcbox->currentText(),tEdit->toPlainText());
+        QMessageBox::information(0,"上传成功","上传成功",0);
+        timer->start(100);
+        }
+    }
+    else
+    timer->start(100);
+}
+void sidewidget::downloadpro()
+{
+    timer->stop();
+    wid=new downloadWidget;
+    connect(wid,SIGNAL(addsignal(QString,QString)),this,SLOT(dodownloadpro(QString,QString)));
+    wid->exec();
+    timer->start(200);
+}
+void sidewidget::dodownloadpro(QString title, QString text)
+{
+    for(int i=0;i<clcbox->count()-1;i++)
+    {
+        if(clcbox->itemText(i)==title)
+        {
+            QMessageBox::information(0,"失败","存在相同项",0);
+            return;
+        }
+    }
+    m_IniFile->setValue("text/"+title,text);
+    clcbox->insertItem(0,title);
+    preindex++;
+     QMessageBox::information(0,"成功","添加成功",0);
 }
 void sidewidget::showtextandadd(QString str)
 {
     int index=clcbox->currentIndex();
     opflag=false;
-    m_IniFile->setValue("text/"+clcbox->itemText(preindex),tEdit->toPlainText());
+    m_IniFile->setValue("text/"+clcbox->itemText(preindex),tEdit->toPlainText()); //保存上一个文本
     preindex=index;
     if(index!=clcbox->count()-1)
     {
@@ -195,7 +262,7 @@ void sidewidget::hidepro()
     double i;
     if(anime)
     {
-    for(i=0;i>-400;i-=0.0002)
+    for(i=0;i>-500;i-=0.0002)
     {
         move((int)i,0);
     }
@@ -225,18 +292,75 @@ void sidewidget::fixedpro()
     }
 
 }
-void sidewidget::textchangepro()
+void sidewidget::cursorchangepro()
 {
-    cursor.mergeCharFormat(fmt);
-    tEdit->mergeCurrentCharFormat(fmt);
-    textstr=tEdit->toPlainText();
-    textcount->setText("当前字数："+QString::number(tEdit->toPlainText().length(),10));
+    static bool in=false;
+    static int pt;
+    if(tEdit->toPlainText().length()>prestrcount)//表示键入
+    {
+    QTextCursor cur=tEdit->textCursor();
+    int p=cur.position();
+    QString c=tEdit->toPlainText().mid(--p,1);
+    if(c=="(")
+    {
+        tEdit->blockSignals(true);
+        cur.insertText(")");
+        cur.setPosition(++p);
+        tEdit->setTextCursor(cur);
+        tEdit->blockSignals(false);
+    }
+    else if(c=="[")
+    {
+        tEdit->blockSignals(true);
+        cur.insertText("]");
+        cur.setPosition(++p);
+        tEdit->setTextCursor(cur);
+        tEdit->blockSignals(false);
+    }
+    else if(c=="\"")
+    {
+        tEdit->blockSignals(true);
+        cur.insertText("\"");
+        cur.setPosition(++p);
+        tEdit->setTextCursor(cur);
+        tEdit->blockSignals(false);
+    }
+    else if(c=="'")
+    {
+        tEdit->blockSignals(true);
+        cur.insertText("'");
+        cur.setPosition(++p);
+        tEdit->setTextCursor(cur);
+        tEdit->blockSignals(false);
+    }
+    else if(c=="{")
+    {
+        tEdit->blockSignals(true);
+        cur.insertText("}");
+        cur.setPosition(++p);
+        tEdit->setTextCursor(cur);
+        tEdit->blockSignals(false);
+        pt=cur.position();//保存花括号坐标
+        in=true;
+    }
+    else if(in && c=="\n" && pt==p)
+    {
+        tEdit->blockSignals(true);
+        cur.insertText("\n");
+        cur.setPosition(++p);
+        tEdit->setTextCursor(cur);
+        cur.insertText("    ");
+        tEdit->blockSignals(false);
+        in=false;
+    }
+    }
+    prestrcount=tEdit->toPlainText().length();//保存字数
 }
 void sidewidget::timepro()
 {
     POINT p;
     GetCursorPos(&p);
-    if(p.x>450)
+    if(p.x>500 && !sidefixed)
         hidepro();
 }
 void sidewidget::picturepro()
@@ -303,7 +427,7 @@ void sidewidget::updatepro()
         }
     }
 
-    tEdit->setFont(QFont(tr("宋体"), 11,63));
+    tEdit->setFont(QFont(tr("宋体"), 11,50));
 
 
     cursor = tEdit->textCursor();
@@ -316,8 +440,11 @@ void sidewidget::comboxpro(int index)
 {
     qDebug()<<index;
     QPixmap *img= new QPixmap(path+"/"+filenamelist.at(index));
-    QPixmap fitpixmap =img->scaled(370, 490, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    QPixmap fitpixmap =img->scaled(470, 450, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    if(!fitpixmap.isNull())
     pictureLabel1->setPixmap(fitpixmap);
+    else
+        pictureLabel1->setText(filenamelist.at(index));
     m_IniFile->setValue("picture/current",path+filenamelist.at(index));
 }
 bool sidewidget::eventFilter(QObject *obj, QEvent *event)
@@ -364,7 +491,7 @@ void sidewidget::showMenu(QPoint p)
         cutAction->setDisabled(false);
         URLAction->setDisabled(false);
     }
-    selectallAction->setDisabled(true);
+    //selectallAction->setDisabled(true);
     textMenu->move(p);
     textMenu->show();
 }
@@ -373,7 +500,7 @@ void sidewidget::createMenuandAction()
     textMenu=new QMenu(this);
     cutAction=new QAction(tr("剪切"),this);
     copyAction=new QAction(tr("复制"),this);
-    selectallAction=new QAction(tr("全选(有问题)"),this);
+    selectallAction=new QAction(tr("全选"),this);
     URLAction=new QAction(tr("打开URL"),this);
     pasteAction=new QAction(tr("粘贴"),this);
     textMenu->addAction(copyAction);
@@ -389,21 +516,21 @@ void sidewidget::createMenuandAction()
     connect(URLAction,SIGNAL(triggered(bool)),SLOT(URLpro()));
     connect(pasteAction,SIGNAL(triggered(bool)),SLOT(pastepro()));
 }
-void sidewidget::copypro()
+void sidewidget::copypro()//复制
 {
 
     QTextCursor cur=tEdit->textCursor();
     QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(cur.selectedText());
 }
-void sidewidget::cutpro()
+void sidewidget::cutpro()//复切
 {
     QTextCursor cur=tEdit->textCursor();
     QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(cur.selectedText());
     cur.removeSelectedText();
 }
-void sidewidget::pastepro()
+void sidewidget::pastepro()//粘贴
 {
     QTextCursor cur=tEdit->textCursor();
     QClipboard *clipboard = QApplication::clipboard();
@@ -415,15 +542,12 @@ void sidewidget::pastepro()
     else
     cur.insertText(clipboard->text());
 }
-void sidewidget::selectallypro()
+void sidewidget::selectallypro()//全选
 {
-    QTextCursor cur=tEdit->textCursor();
-    cur.setPosition(1,QTextCursor::MoveAnchor);
-    cur.movePosition(QTextCursor::NoMove,QTextCursor::KeepAnchor,100);
-    cur.select(QTextCursor::WordUnderCursor);
-    tEdit->setTextCursor(cur);
+    tEdit->moveCursor(QTextCursor::Start,QTextCursor::MoveMode::MoveAnchor);
+    tEdit->moveCursor(QTextCursor::End,QTextCursor::MoveMode::KeepAnchor);
 }
-void sidewidget::URLpro()
+void sidewidget::URLpro()//打开指定网页
 {
     QString temp=tEdit->textCursor().selectedText();
     QDesktopServices::openUrl(QUrl(temp));

@@ -22,6 +22,7 @@
 #include<QPoint>
 #include<QClipboard>
 #include<QLineEdit>
+#include"downloadwidget.h"
 class sidewidget : public QWidget
 {
     Q_OBJECT
@@ -36,6 +37,8 @@ private:
     QPushButton *fixedBtn;
     QPushButton *pictureBtn;
     QPushButton *updatecomboxBtn;
+    QPushButton *uploadBtn;
+    QPushButton *downloadBtn;
     QLabel *textcount;
     QComboBox *combox;
     QLabel *pictureLabel1;
@@ -52,6 +55,8 @@ private:
     QAction *pasteAction;
     QAction *URLAction;
     QLineEdit *clledit;
+    downloadWidget *wid;
+    int prestrcount;
     bool firstrun;
     void createMenuandAction();
     int preindex;
@@ -61,6 +66,7 @@ public slots:
 private slots:
     void fixedpro();
     void textchangepro();
+    void cursorchangepro();
     void timepro();
     void picturepro();
     void savepro();
@@ -74,6 +80,9 @@ private slots:
     void URLpro();
     void showcombox();
     void showtextandadd(QString);
+    void uploadpro();
+    void downloadpro();
+    void dodownloadpro(QString,QString);
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
 };
